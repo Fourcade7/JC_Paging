@@ -13,30 +13,15 @@ class ResultPagingSource constructor(
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Results> {
         return try {
-            val nextPage: Int = params.key ?: 1
-            val response = retroService.getDataFromApi(nextPage)
-
-            var nextPageNumber: Int? = null
-            if(response?.info?.next != null) {
-                val uri = Uri.parse(response?.info?.next!!)
-                val nextPageQuery = uri.getQueryParameter("page")
-                nextPageNumber = nextPageQuery?.toInt()
-            }
-            var prevPageNumber: Int? = null
-            if(response?.info?.prev != null) {
-                val uri = Uri.parse(response?.info?.prev!!)
-                val prevPageQuery = uri.getQueryParameter("page")
-
-                prevPageNumber = prevPageQuery?.toInt()
-            }
+            val page = params.key ?: 1
+            val response = retroService.getDataFromApi(page = page)
 
             LoadResult.Page(
                 data = response.results,
-                prevKey = prevPageNumber,
-                nextKey = nextPageNumber
+                prevKey = if (page == 1) null else page.minus(1),
+                nextKey = if (response.results.isEmpty()) null else page.plus(1),
             )
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             LoadResult.Error(e)
         }
     }
